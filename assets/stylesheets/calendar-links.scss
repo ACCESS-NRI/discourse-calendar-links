@@ -1,0 +1,88 @@
+// assets/stylesheets/calendar-links.scss
+
+// ── Modal form ──────────────────────────────────────────────────────────────
+
+.calendar-links-modal {
+  .cal-field {
+    margin-bottom: 1rem;
+
+    label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--primary-medium);
+      margin-bottom: 0.35rem;
+    }
+
+    input[type="text"],
+    input[type="url"],
+    input[type="date"],
+    input[type="time"],
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 0.4rem 0.6rem;
+      font-size: 0.875rem;
+      border: 1px solid var(--primary-low-mid);
+      border-radius: 4px;
+      background: var(--secondary);
+      color: var(--primary);
+
+      &:focus {
+        outline: none;
+        border-color: var(--tertiary);
+        box-shadow: 0 0 0 2px rgba(var(--tertiary-rgb), 0.2);
+      }
+    }
+  }
+
+  .cal-field-row {
+    display: flex;
+    gap: 0.75rem;
+
+    .cal-field {
+      flex: 1;
+    }
+  }
+
+  .cal-error {
+    font-size: 0.8rem;
+    color: var(--danger);
+    margin-top: 0.3rem;
+  }
+
+  .cal-error--global {
+    padding: 0.5rem 0.75rem;
+    background: var(--danger-low);
+    border-radius: 4px;
+  }
+}
+
+// ── Inserted calendar block (rendered in posts) ─────────────────────────────
+
+.calendar-links-block {
+  display: inline-block;
+  border: 1px solid var(--primary-low-mid);
+  border-radius: 6px;
+  padding: 0.65rem 1rem;
+  margin: 0.5rem 0;
+  background: var(--secondary);
+  font-size: 0.9rem;
+  line-height: 1.6;
+
+  p {
+    margin: 0 0 0.3rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  a {
+    color: var(--tertiary);
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

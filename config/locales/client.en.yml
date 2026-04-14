@@ -1,0 +1,18 @@
+# config/locales/client.en.yml
+
+en:
+  js:
+    calendar_links:
+      toolbar_label: "Insert calendar links"
+      modal_title: "Insert calendar links"
+      field_title: "Event title"
+      field_title_placeholder: "e.g. Community call"
+      field_date: "Date"
+      field_time: "Start time"
+      field_duration: "Duration (min)"
+      field_timezone: "Timezone"
+      field_zoom: "Zoom URL"
+      insert_button: "Insert links"
+      default_title: "Event"
+      error_date_required: "Please enter a date and start time."
+      error_zoom_url: "Please enter a valid URL starting with https://"
