@@ -1,5 +1,7 @@
 // assets/javascripts/discourse/lib/calendar-links-builder.js
 
+const ALLOWED_URL_PROTOCOLS = ["http:", "https:"];
+
 /**
  * Pads a number to 2 digits.
  */
@@ -110,6 +112,53 @@ function buildICSDataURI(icsString) {
 }
 
 /**
+ * Validates a user-supplied URL and returns a normalised, safe string
+ * (or null if the URL is missing/malformed/uses a disallowed scheme).
+ *
+ * This is the single place responsible for deciding whether a URL the
+ * user typed (e.g. the Zoom link) is safe to use both as a calendar
+ * field and as an `href` attribute value in the HTML block we insert
+ * into the composer.
+ *
+ * @param {string} rawURL
+ * @returns {string|null}
+ */
+export function sanitizeURL(rawURL) {
+  if (!rawURL) {
+    return null;
+  }
+
+  let url;
+  try {
+    url = new URL(rawURL);
+  } catch {
+    return null;
+  }
+
+  if (!ALLOWED_URL_PROTOCOLS.includes(url.protocol)) {
+    return null;
+  }
+
+  return url.toString();
+}
+
+/**
+ * Escapes a string for safe use inside HTML text content or a quoted
+ * HTML attribute value.
+ *
+ * @param {string} str
+ * @returns {string}
+ */
+export function escapeHTML(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/**
  * Master function: given event params, returns the three calendar link URLs
  * plus the ICS string itself.
  *
@@ -119,7 +168,7 @@ function buildICSDataURI(icsString) {
  * @param {string} params.timeStr        "HH:MM"
  * @param {number} params.durationMin
  * @param {string} params.tzOffset       e.g. "+10:00"
- * @param {string} params.zoomURL
+ * @param {string} params.zoomURL        already-sanitized (see sanitizeURL)
  * @returns {{ googleURL, outlookURL, icsDataURI, icsString }}
  */
 export function buildCalendarLinks({
@@ -170,6 +219,11 @@ export function buildCalendarLinks({
  * Renders the HTML block that gets inserted into the composer.
  * Uses a simple <div> with inline styles so it survives Discourse's
  * HTML sanitiser (allowlisted tags/attributes only).
+ *
+ * `title` and `zoomURL` are user-supplied and are escaped here before
+ * being placed into HTML text content / attribute values. `zoomURL`
+ * must already have been through `sanitizeURL` — this function does
+ * not validate the scheme, it only escapes for safe HTML output.
  */
 export function buildInsertHTML({
   title,
@@ -192,7 +246,8 @@ export function buildInsertHTML({
     }
   );
 
-  const safeTitle = title.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const safeTitle = escapeHTML(title);
+  const safeZoomURL = zoomURL ? escapeHTML(zoomURL) : "";
   const fileName =
     title.replace(/\s+/g, "-").replace(/[^a-zA-Z0-9-]/g, "") + ".ics";
 
@@ -203,6 +258,6 @@ export function buildInsertHTML({
     <a href="${outlookURL}" target="_blank" rel="noopener noreferrer">Add to Outlook</a> &nbsp;&middot;&nbsp;
     <a href="${icsDataURI}" download="${fileName}">Download .ics (Apple Calendar / iCal)</a>
   </p>
-  ${zoomURL ? `<p><a href="${zoomURL}" target="_blank" rel="noopener noreferrer">Join Zoom meeting</a></p>` : ""}
+  ${zoomURL ? `<p><a href="${safeZoomURL}" target="_blank" rel="noopener noreferrer">Join Zoom meeting</a></p>` : ""}
 </div>`;
 }

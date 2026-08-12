@@ -10,6 +10,7 @@ import { i18n } from "discourse-i18n";
 import {
   buildCalendarLinks,
   buildInsertHTML,
+  sanitizeURL,
 } from "../lib/calendar-links-builder";
 
 const TIMEZONES = [
@@ -27,6 +28,12 @@ const TIMEZONES = [
   { label: "Tokyo", iana: "Asia/Tokyo" },
   { label: "Sydney", iana: "Australia/Sydney" },
 ];
+
+// Keep these in sync with the min/max/maxlength attributes on the
+// corresponding inputs below.
+const TITLE_MAX_LENGTH = 200;
+const DURATION_MIN = 5;
+const DURATION_MAX = 480;
 
 function getUTCOffset(ianaTimezone, eventDate) {
   const formatter = new Intl.DateTimeFormat("en", {
@@ -56,6 +63,7 @@ export default class CalendarLinksModal extends Component {
     Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
   @tracked zoomURL = "";
   @tracked zoomError = null;
+  @tracked durationError = null;
   @tracked formError = null;
 
   get timezones() {
@@ -75,22 +83,57 @@ export default class CalendarLinksModal extends Component {
   @action
   insertLinks() {
     this.zoomError = null;
+    this.durationError = null;
     this.formError = null;
 
+    // Required fields
     if (!this.date || !this.time) {
       this.formError = i18n("calendar_links.error_date_required");
       return;
     }
 
-    if (this.zoomURL && !/^https?:\/\//i.test(this.zoomURL)) {
-      this.zoomError = i18n("calendar_links.error_zoom_url");
+    // Reject dates/times that don't combine into a real Date (e.g. a
+    // browser that doesn't fully support <input type="date"/"time"> and
+    // lets malformed text through).
+    const eventDate = new Date(`${this.date}T${this.time}`);
+    if (isNaN(eventDate.getTime())) {
+      this.formError = i18n("calendar_links.error_date_invalid");
       return;
     }
 
-    const eventTitle =
-      this.title.trim() || i18n("calendar_links.default_title");
-    const durationMin = parseInt(this.duration, 10) || 60;
-    const eventDate = new Date(`${this.date}T${this.time}`);
+    // Duration must be a finite number within the range advertised by
+    // the input's min/max attributes - typed values can bypass the
+    // browser's own spinner constraints.
+    const durationMin = Number(this.duration);
+    if (
+      !Number.isFinite(durationMin) ||
+      durationMin < DURATION_MIN ||
+      durationMin > DURATION_MAX
+    ) {
+      this.durationError = i18n("calendar_links.error_duration_range");
+      return;
+    }
+
+    const trimmedTitle = this.title.trim();
+    if (trimmedTitle.length > TITLE_MAX_LENGTH) {
+      this.formError = i18n("calendar_links.error_title_length");
+      return;
+    }
+
+    // Validate + normalise the Zoom URL. This also protects against the
+    // URL being used to break out of the href="" attribute when it's
+    // inserted into the composer HTML.
+    let sanitizedZoomURL = "";
+    const trimmedZoomURL = this.zoomURL.trim();
+    if (trimmedZoomURL) {
+      sanitizedZoomURL = sanitizeURL(trimmedZoomURL);
+      if (!sanitizedZoomURL) {
+        this.zoomError = i18n("calendar_links.error_zoom_url");
+        return;
+      }
+    }
+
+    const eventTitle = trimmedTitle || i18n("calendar_links.default_title");
     const tzOffset = getUTCOffset(this.selectedIana, eventDate);
 
     const { googleURL, outlookURL, icsDataURI } = buildCalendarLinks({
@@ -99,14 +142,14 @@ export default class CalendarLinksModal extends Component {
       timeStr: this.time,
       durationMin,
       tzOffset,
-      zoomURL: this.zoomURL.trim(),
+      zoomURL: sanitizedZoomURL,
     });
 
     const html = buildInsertHTML({
       title: eventTitle,
       dateStr: this.date,
       timeStr: this.time,
-      zoomURL: this.zoomURL.trim(),
+      zoomURL: sanitizedZoomURL,
       googleURL,
       outlookURL,
       icsDataURI,
@@ -129,6 +172,7 @@ export default class CalendarLinksModal extends Component {
             type="text"
             id="cal-title"
             value={{this.title}}
+            maxlength={{TITLE_MAX_LENGTH}}
             placeholder={{i18n "calendar_links.field_title_placeholder"}}
             {{on "input" (fn this.updateField "title")}}
           />
@@ -141,6 +185,7 @@ export default class CalendarLinksModal extends Component {
               type="date"
               id="cal-date"
               value={{this.date}}
+              required
               {{on "input" (fn this.updateField "date")}}
             />
           </div>
@@ -150,6 +195,7 @@ export default class CalendarLinksModal extends Component {
               type="time"
               id="cal-time"
               value={{this.time}}
+              required
               {{on "input" (fn this.updateField "time")}}
             />
           </div>
@@ -164,11 +210,14 @@ export default class CalendarLinksModal extends Component {
               type="number"
               id="cal-duration"
               value={{this.duration}}
-              min="5"
-              max="480"
+              min={{DURATION_MIN}}
+              max={{DURATION_MAX}}
               step="5"
               {{on "input" (fn this.updateField "duration")}}
             />
+            {{#if this.durationError}}
+              <p class="cal-error">{{this.durationError}}</p>
+            {{/if}}
           </div>
           <div class="cal-field">
             <label for="cal-tz">{{i18n "calendar_links.field_timezone"}}</label>

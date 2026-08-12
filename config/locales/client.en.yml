@@ -15,4 +15,7 @@ en:
       insert_button: "Insert links"
       default_title: "Event"
       error_date_required: "Please enter a date and start time."
+      error_date_invalid: "Please enter a valid date and time."
+      error_duration_range: "Duration must be between 5 and 480 minutes."
+      error_title_length: "Event title must be 200 characters or fewer."
       error_zoom_url: "Please enter a valid URL starting with https://"
