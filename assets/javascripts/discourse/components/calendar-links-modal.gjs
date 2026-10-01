@@ -35,6 +35,27 @@ const TITLE_MAX_LENGTH = 200;
 const DURATION_MIN = 5;
 const DURATION_MAX = 480;
 
+/**
+ * Default date/time for a new event: now, rounded up to the next
+ * half-hour. Used to pre-fill the date/time inputs with a real value
+ * (rather than a placeholder) so the fields are never ambiguous about
+ * whether they've actually been set.
+ */
+function getDefaultEventDateTime(now = new Date()) {
+  const pad = (n) => String(n).padStart(2, "0");
+
+  const rounded = new Date(now);
+  rounded.setSeconds(0, 0);
+  const remainder = rounded.getMinutes() % 30;
+  if (remainder !== 0) {
+    rounded.setMinutes(rounded.getMinutes() + (30 - remainder));
+  }
+
+  const dateStr = `${rounded.getFullYear()}-${pad(rounded.getMonth() + 1)}-${pad(rounded.getDate())}`;
+  const timeStr = `${pad(rounded.getHours())}:${pad(rounded.getMinutes())}`;
+  return { dateStr, timeStr };
+}
+
 function getUTCOffset(ianaTimezone, eventDate) {
   const formatter = new Intl.DateTimeFormat("en", {
     timeZone: ianaTimezone,
@@ -56,15 +77,23 @@ function getUTCOffset(ianaTimezone, eventDate) {
 
 export default class CalendarLinksModal extends Component {
   @tracked title = "";
-  @tracked date = "";
-  @tracked time = "";
+  @tracked date;
+  @tracked time;
   @tracked duration = 60;
   @tracked selectedIana =
     Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
   @tracked zoomURL = "";
   @tracked zoomError = null;
   @tracked durationError = null;
+  @tracked titleError = null;
   @tracked formError = null;
+
+  constructor() {
+    super(...arguments);
+    const { dateStr, timeStr } = getDefaultEventDateTime();
+    this.date = dateStr;
+    this.time = timeStr;
+  }
 
   get timezones() {
     return TIMEZONES;
@@ -84,6 +113,7 @@ export default class CalendarLinksModal extends Component {
   insertLinks() {
     this.zoomError = null;
     this.durationError = null;
+    this.titleError = null;
     this.formError = null;
 
     // Required fields
@@ -115,29 +145,34 @@ export default class CalendarLinksModal extends Component {
     }
 
     const trimmedTitle = this.title.trim();
+    if (!trimmedTitle) {
+      this.titleError = i18n("calendar_links.error_title_missing");
+      return;
+    }
     if (trimmedTitle.length > TITLE_MAX_LENGTH) {
-      this.formError = i18n("calendar_links.error_title_length");
+      this.titleError = i18n("calendar_links.error_title_length");
       return;
     }
 
     // Validate + normalise the Zoom URL. This also protects against the
     // URL being used to break out of the href="" attribute when it's
     // inserted into the composer HTML.
-    let sanitizedZoomURL = "";
     const trimmedZoomURL = this.zoomURL.trim();
-    if (trimmedZoomURL) {
-      sanitizedZoomURL = sanitizeURL(trimmedZoomURL);
-      if (!sanitizedZoomURL) {
-        this.zoomError = i18n("calendar_links.error_zoom_url");
-        return;
-      }
+    if (!trimmedZoomURL) {
+      this.zoomError = i18n("calendar_links.error_zoom_url_required");
+      return;
     }
 
-    const eventTitle = trimmedTitle || i18n("calendar_links.default_title");
+    const sanitizedZoomURL = sanitizeURL(trimmedZoomURL);
+    if (!sanitizedZoomURL) {
+      this.zoomError = i18n("calendar_links.error_zoom_url");
+      return;
+    }
+
     const tzOffset = getUTCOffset(this.selectedIana, eventDate);
 
     const { googleURL, outlookURL, icsDataURI } = buildCalendarLinks({
-      title: eventTitle,
+      title: trimmedTitle,
       dateStr: this.date,
       timeStr: this.time,
       durationMin,
@@ -146,7 +181,7 @@ export default class CalendarLinksModal extends Component {
     });
 
     const html = buildInsertHTML({
-      title: eventTitle,
+      title: trimmedTitle,
       dateStr: this.date,
       timeStr: this.time,
       zoomURL: sanitizedZoomURL,
@@ -174,8 +209,12 @@ export default class CalendarLinksModal extends Component {
             value={{this.title}}
             maxlength={{TITLE_MAX_LENGTH}}
             placeholder={{i18n "calendar_links.field_title_placeholder"}}
+            required
             {{on "input" (fn this.updateField "title")}}
           />
+          {{#if this.titleError}}
+            <p class="cal-error">{{this.titleError}}</p>
+          {{/if}}
         </div>
 
         <div class="cal-field-row">
@@ -241,6 +280,7 @@ export default class CalendarLinksModal extends Component {
             id="cal-zoom"
             value={{this.zoomURL}}
             placeholder="https://zoom.us/j/..."
+            required
             {{on "input" (fn this.updateField "zoomURL")}}
           />
           {{#if this.zoomError}}
