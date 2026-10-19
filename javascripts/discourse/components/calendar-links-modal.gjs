@@ -118,7 +118,7 @@ export default class CalendarLinksModal extends Component {
 
     // Required fields
     if (!this.date || !this.time) {
-      this.formError = i18n("calendar_links.error_date_required");
+      this.formError = i18n(themePrefix("calendar_links.error_date_required"));
       return;
     }
 
@@ -127,7 +127,7 @@ export default class CalendarLinksModal extends Component {
     // lets malformed text through).
     const eventDate = new Date(`${this.date}T${this.time}`);
     if (isNaN(eventDate.getTime())) {
-      this.formError = i18n("calendar_links.error_date_invalid");
+      this.formError = i18n(themePrefix("calendar_links.error_date_invalid"));
       return;
     }
 
@@ -140,17 +140,19 @@ export default class CalendarLinksModal extends Component {
       durationMin < DURATION_MIN ||
       durationMin > DURATION_MAX
     ) {
-      this.durationError = i18n("calendar_links.error_duration_range");
+      this.durationError = i18n(
+        themePrefix("calendar_links.error_duration_range")
+      );
       return;
     }
 
     const trimmedTitle = this.title.trim();
     if (!trimmedTitle) {
-      this.titleError = i18n("calendar_links.error_title_missing");
+      this.titleError = i18n(themePrefix("calendar_links.error_title_missing"));
       return;
     }
     if (trimmedTitle.length > TITLE_MAX_LENGTH) {
-      this.titleError = i18n("calendar_links.error_title_length");
+      this.titleError = i18n(themePrefix("calendar_links.error_title_length"));
       return;
     }
 
@@ -159,13 +161,15 @@ export default class CalendarLinksModal extends Component {
     // inserted into the composer HTML.
     const trimmedZoomURL = this.zoomURL.trim();
     if (!trimmedZoomURL) {
-      this.zoomError = i18n("calendar_links.error_zoom_url_required");
+      this.zoomError = i18n(
+        themePrefix("calendar_links.error_zoom_url_required")
+      );
       return;
     }
 
     const sanitizedZoomURL = sanitizeURL(trimmedZoomURL);
     if (!sanitizedZoomURL) {
-      this.zoomError = i18n("calendar_links.error_zoom_url");
+      this.zoomError = i18n(themePrefix("calendar_links.error_zoom_url"));
       return;
     }
 
@@ -196,19 +200,23 @@ export default class CalendarLinksModal extends Component {
 
   <template>
     <DModal
-      @title={{i18n "calendar_links.modal_title"}}
+      @title={{i18n (themePrefix "calendar_links.modal_title")}}
       @closeModal={{@closeModal}}
       class="calendar-links-modal"
     >
       <:body>
         <div class="cal-field">
-          <label for="cal-title">{{i18n "calendar_links.field_title"}}</label>
+          <label for="cal-title">{{i18n
+              (themePrefix "calendar_links.field_title")
+            }}</label>
           <input
             type="text"
             id="cal-title"
             value={{this.title}}
             maxlength={{TITLE_MAX_LENGTH}}
-            placeholder={{i18n "calendar_links.field_title_placeholder"}}
+            placeholder={{i18n
+              (themePrefix "calendar_links.field_title_placeholder")
+            }}
             required
             {{on "input" (fn this.updateField "title")}}
           />
@@ -219,7 +227,9 @@ export default class CalendarLinksModal extends Component {
 
         <div class="cal-field-row">
           <div class="cal-field">
-            <label for="cal-date">{{i18n "calendar_links.field_date"}}</label>
+            <label for="cal-date">{{i18n
+                (themePrefix "calendar_links.field_date")
+              }}</label>
             <input
               type="date"
               id="cal-date"
@@ -229,7 +239,9 @@ export default class CalendarLinksModal extends Component {
             />
           </div>
           <div class="cal-field">
-            <label for="cal-time">{{i18n "calendar_links.field_time"}}</label>
+            <label for="cal-time">{{i18n
+                (themePrefix "calendar_links.field_time")
+              }}</label>
             <input
               type="time"
               id="cal-time"
@@ -243,7 +255,7 @@ export default class CalendarLinksModal extends Component {
         <div class="cal-field-row">
           <div class="cal-field">
             <label for="cal-duration">
-              {{i18n "calendar_links.field_duration"}}
+              {{i18n (themePrefix "calendar_links.field_duration")}}
             </label>
             <input
               type="number"
@@ -259,7 +271,9 @@ export default class CalendarLinksModal extends Component {
             {{/if}}
           </div>
           <div class="cal-field">
-            <label for="cal-tz">{{i18n "calendar_links.field_timezone"}}</label>
+            <label for="cal-tz">{{i18n
+                (themePrefix "calendar_links.field_timezone")
+              }}</label>
             <select id="cal-tz" {{on "change" this.onTzChange}}>
               {{#each this.timezones as |tz|}}
                 <option
@@ -274,7 +288,9 @@ export default class CalendarLinksModal extends Component {
         </div>
 
         <div class="cal-field">
-          <label for="cal-zoom">{{i18n "calendar_links.field_zoom"}}</label>
+          <label for="cal-zoom">{{i18n
+              (themePrefix "calendar_links.field_zoom")
+            }}</label>
           <input
             type="url"
             id="cal-zoom"
@@ -297,7 +313,7 @@ export default class CalendarLinksModal extends Component {
         <DButton @action={{@closeModal}} @label="cancel" class="btn-flat" />
         <DButton
           @action={{this.insertLinks}}
-          @label="calendar_links.insert_button"
+          @label={{themePrefix "calendar_links.insert_button"}}
           class="btn-primary"
         />
       </:footer>

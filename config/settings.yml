@@ -1,4 +1,0 @@
-plugins:
-  calendar_links_enabled:
-    default: true
-    client: true
