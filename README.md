@@ -42,6 +42,16 @@ In addition to installing the component, you must ensure that the component is e
 
 Do this by going to **Admin → Themes & Components → (THIS COMPONENT) → EDIT**, then include the component on the active theme.
 
+## Usage
+
+1. Open the composer (new topic, new post, or reply) on a theme with this component enabled.
+2. Click the **...** (overflow) icon in the composer toolbar, then choose **Insert calendar links**.
+3. Fill in the event details in the dialog: title, date, start time, duration, timezone, and a Zoom URL.
+4. Click **Insert links**. A block of text is added to your post with links to add the event to Google Calendar, Outlook, or Apple Calendar/ICS, plus the Zoom link.
+5. Finish writing your post as normal and submit it — readers can click any of the inserted links to add the event to their own calendar.
+
+Depending on if you are in Markdown or HTML mode you may see the code or the rendered output. Switch between them to confirm your output looks correct.
+
 ## Customisation notes
 
 ### Timezone handling
@@ -52,7 +62,7 @@ To add more timezones, see the constant defined in `calendar-links-modal.gjs`.
 
 ### HTML sanitisation
 
-Discourse's HTML sanitiser allowlists a specific set of tags and attributes. The inserted block uses `<div>`, `<p>`, `<a>`, `<strong>` — all safe. If you add more markup, verify it against [Discourse's sanitisation config](https://github.com/discourse/discourse/blob/main/lib/pretty_text/allowlister.rb).
+Discourse's HTML sanitiser allowlists a specific set of tags and attributes. The inserted block uses `<div>`, `<p>`, `<a>`, `<strong>` — all safe. If you add more markup, verify it against [Discourse's sanitisation config](https://github.com/discourse/discourse/blob/main/frontend/pretty-text/addon/allow-lister.js).
 
 ### Translations
 
